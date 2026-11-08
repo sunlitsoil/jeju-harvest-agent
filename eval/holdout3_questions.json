@@ -1,0 +1,17 @@
+[
+ {"q": "흙당근 지금 팔아치울까 좀 더 둘까", "cultivar": "흙당근", "intents": ["forecast", "status"]},
+ {"q": "양배추 이번 주 시세 좀 알려주세요", "cultivar": "양배추(일반)", "intents": ["status"]},
+ {"q": "월동무 몇 월 중순쯤 내야 값 좋았어?", "cultivar": "월동무", "intents": ["timing"]},
+ {"q": "세척당근 값 계속 내려갈 것 같아?", "cultivar": "세척당근", "intents": ["forecast"]},
+ {"q": "만생양파 요즘 얼마씩 해?", "cultivar": "만생양파", "intents": ["status"]},
+ {"q": "놈삐 어느 공판장에 보내민 좋수과?", "cultivar": "월동무", "intents": ["market"]},
+ {"q": "깐마늘 작년 이맘때랑 비교하면 어때", "cultivar": "깐마늘", "intents": ["status"]},
+ {"q": "저장양배추 언제 출하하는 게 제일 이득이었어", "cultivar": "저장양배추", "intents": ["timing"]},
+ {"q": "당근 엄궁으로 보낼까 가락으로 보낼까", "cultivar": "당근(일반)", "intents": ["market"]},
+ {"q": "세척무 지금 내버릴까?", "cultivar": "세척무", "intents": ["forecast", "status"]},
+ {"q": "조생양파 값 오를 기미 있어?", "cultivar": "조생양파", "intents": ["forecast"]},
+ {"q": "양배추 한 달 뒤엔 어떨 것 같아", "cultivar": "양배추(일반)", "intents": ["forecast"]},
+ {"q": "한라봉 지금 시세", "cultivar": null, "intents": []},
+ {"q": "비닐하우스 짓는 데 얼마 들어?", "cultivar": null, "intents": []},
+ {"q": "감자 값 알려줘", "cultivar": null, "intents": []}
+]

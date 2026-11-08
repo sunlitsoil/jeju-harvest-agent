@@ -222,5 +222,17 @@ class GuardrailTest(unittest.TestCase):
         self.assertEqual(p["intents"], ["forecast"])
 
 
+class PinTest(unittest.TestCase):
+    def test_forecast_result_line_pinned_without_llm(self):
+        r = agent.answer("당근 조금 기다리면 값 오를까?")
+        self.assertTrue(r.pinned)
+        self.assertIn("제주데이터허브 가격 전망", r.summary)
+        self.assertEqual(r.picked, [])
+
+    def test_decide_words(self):
+        self.assertIn("forecast", agent.parse("저장양파 지금 출하할까 말까")[1])
+        self.assertIn("forecast", agent.parse("세척무 한두 주 묵혔다 내면 손해야?")[1])
+
+
 if __name__ == "__main__":
     unittest.main()

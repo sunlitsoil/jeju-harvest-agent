@@ -40,13 +40,16 @@ ITEM_ALIASES = [
 
 INTENT_WORDS = {
     "forecast": ["기다리", "기다릴", "더 오를", "오를까", "오르까", "떨어질", "내릴까", "전망", "다음주", "다음 주",
-                 "앞으로", "버틸", "몇 주", "다음달", "다음 달"],
+                 "앞으로", "버틸", "몇 주", "다음달", "다음 달",
+                 # v0.3.3(보류2 이후 추가): 묵혀 두기·제주어 「이시민(있으면)」
+                 "묵히", "묵혀", "묵혔", "이시민", "기다렸다", "있다가", "나중에"],
     "timing": ["언제", "시기", "타이밍", "몇월", "몇 월", "때가", "출하 시기", "시즌"],
     "market": ["어느 시장", "어디", "시장별", "도매시장", "어느 도매"],
     "status": ["지금", "요즘", "시세", "가격", "얼마", "오늘", "이번주", "이번 주", "작년", "비교", "내도", "팔아도"],
 }
 # 「지금 내도 될까」처럼 출하 결정을 묻는 말은 현재 시세에 허브 전망까지 붙인다.
-DECIDE_WORDS = ["내도", "팔아도", "출하해도", "낼까", "팔까"]
+DECIDE_WORDS = ["내도", "팔아도", "출하해도", "낼까", "팔까",
+                "출하할까", "넘겨도", "팔아야", "내야하나", "내사", "팔믄", "내믄", "넘길까"]  # 뒤쪽은 v0.3.3(보류2 이후) 추가
 
 # 질문 속 시장 이름(「가락시장」「엄궁」) → 허브 도매시장명
 MARKET_ALIASES = {"가락": "서울가락도매", "강서": "서울강서도매", "구리": "구리도매", "엄궁": "부산엄궁도매",
@@ -79,6 +82,7 @@ class Result:
     lines: list[str] = field(default_factory=list)  # 화면에서 한 줄씩 보여 줄 답변 문장
     summary: str = ""  # AI가 고른 핵심 문장(본문 문장 그대로). 본문 answer는 항상 코드가 만든 문장이다
     picked: list[int] = field(default_factory=list)
+    pinned: list[int] = field(default_factory=list)  # 규칙으로 고정한 핵심 문장(전망을 물었을 때 전망 결과 문장)
     followups: list[str] = field(default_factory=list)
     llm_used: bool = False
     llm_rejected: str = ""
@@ -428,16 +432,20 @@ def answer(question: str) -> Result:
         if fc and not fc["available"] and fc.get("reason") == "not_offered":
             res.steps[-1].note += " → 이 품종은 허브 전망 대상이 아니라 싣지 않습니다"
         if fc is None:
+            res.pinned.append(len(lines))
             lines.append("제주데이터허브 가격 전망을 지금 불러오지 못했습니다. 잠시 뒤 다시 물어봐 주세요.")
         elif not fc["available"] and fc.get("reason") == "implausible":
+            res.pinned.append(len(lines))
             lines.append(f"제주데이터허브 가격 전망({', '.join(fc['skipped'])})은 그 시장 가격이 전국 평균이나 최근 실제 가격과 크게 어긋나 이번 답에서는 싣지 않았습니다.")
         elif not fc["available"]:
             alt = ", ".join(fc["forecast_cultivars"]) or "없음"
+            res.pinned.append(len(lines))
             lines.append(f"제주데이터허브의 「품종별 가격 전망」은 {_josa(res.cultivar, '을를')} 제공하지 않습니다"
                          f"(같은 품목의 전망 품종: {alt}).")
         elif fc["weeks"]:
             w = fc["weeks"]
             seq = ", ".join(f"{_ymd(x['week'])} 주 {_won(x['price'])}" for x in w)
+            res.pinned.append(len(lines))
             where = fc["market"] if market else f"{fc['market']}(최근 4주 물량 {len(fc.get('skipped') or []) + 1}위)"
             lines.append(f"제주데이터허브 가격 전망은 {where} 기준(기준일 {_ymd(fc['base_date'])})으로, "
                          f"지난 실제 주({_ymd(fc['last_week'])} 주) kg당 {_won(fc['last_price'])} 다음을 {seq}으로 봅니다. "
@@ -504,25 +512,31 @@ def _required_terms(res: Result, base: str) -> list[str]:
 
 
 def _polish(res: Result, base: str) -> None:
-    """AI 핵심 문장 고르기: LLM은 답변 문장 번호만 고른다. 화면에는 코드가 만든 그 문장을 그대로 올린다.
+    """핵심 문장: 전망을 물었으면 전망 결과 문장(실음·제외·미제공)을 규칙으로 고정하고, LLM은 나머지 답변 문장 가운데
+    번호만 고른다(합쳐 최대 2개). 화면에는 코드가 만든 그 문장을 그대로 올린다.
     v0.2의 자유 요약은 숫자 검사를 통과하고도 이유를 잘못 이은 사례가 있어(2026-11-08 평가) 이 방식으로 바꿨다.
-    문장을 새로 쓰지 않으므로 숫자·시장·이유를 엇갈리게 이을 수 없다."""
+    v0.3.2 평가에서 4B가 전망 질문에 전망 결과 문장을 고르지 않은 3건이 있어 전망 문장을 고정했다."""
+    pin = res.pinned[:1]
     if len(res.lines) < 2:
+        res.summary = " ".join(res.lines[i] for i in pin) if pin and len(res.lines) > 1 else ""
         return
     numbered = "\n".join(f"{i + 1}. {l}" for i, l in enumerate(res.lines))
     txt = _llm([
         {"role": "system", "content": "너는 제주 농가를 돕는 안내원이다. 아래 번호 붙은 답변 문장 가운데 질문에 가장 직접 답하는 문장을 "
                                       "1개 또는 2개 골라 번호만 쉼표로 답하라(예: 1,3). 다른 말은 쓰지 마라."},
         {"role": "user", "content": f"질문: {res.question}\n답변 문장:\n{numbered}"}], 20)
-    if not txt:
-        return
-    if re.sub(r"[\d,\s.]", "", txt):
-        res.llm_rejected = "번호가 아닌 답: " + txt.strip()[:40]
-        return
-    ids = [int(n) for n in re.findall(r"\d+", txt)]
-    if not ids or len(ids) > 2 or any(not 1 <= i <= len(res.lines) for i in ids):
-        res.llm_rejected = "범위를 벗어난 번호: " + txt.strip()[:40]
-        return
-    res.picked = sorted(set(i - 1 for i in ids))
-    res.summary = " ".join(res.lines[i] for i in res.picked)
-    res.llm_used = True
+    ids: list[int] = []
+    if txt:
+        if re.sub(r"[\d,\s.]", "", txt):
+            res.llm_rejected = "번호가 아닌 답: " + txt.strip()[:40]
+        else:
+            ids = [int(n) for n in re.findall(r"\d+", txt)]
+            if not ids or len(ids) > 2 or any(not 1 <= i <= len(res.lines) for i in ids):
+                res.llm_rejected = "범위를 벗어난 번호: " + txt.strip()[:40]
+                ids = []
+    ai = [i - 1 for i in ids if i - 1 not in pin]
+    res.picked = sorted(set(ai))[: 2 - len(pin)]
+    chosen = sorted(set(pin + res.picked))
+    if chosen:
+        res.summary = " ".join(res.lines[i] for i in chosen)
+        res.llm_used = bool(res.picked)

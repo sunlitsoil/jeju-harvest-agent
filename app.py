@@ -69,7 +69,7 @@ def render(q: str) -> str:
             steps = "".join(f"<li>{html.escape(s.tool)} · {s.ms}ms {html.escape(s.note)}</li>" for s in r.steps)
             steps = f"<p>{planner}</p>" + steps
             cav = "".join(f"<li>{html.escape(c)}</li>" for c in r.caveats)
-            summary = (f'<div class="sum"><b>AI가 고른 핵심 문장 · 아래 답변에서 그대로 옮김</b><br>{html.escape(r.summary)}</div>'
+            summary = (f'<div class="sum"><b>핵심 문장 · 아래 답변에서 그대로 옮김{" · 전망 결과는 규칙으로 고정" if r.pinned else ""}{" · AI가 고른 문장 포함" if r.picked else ""}</b><br>{html.escape(r.summary)}</div>'
                        if r.summary else "")
             fu = "".join(f'<button onclick="location.href=\'?q={urllib.parse.quote(f)}\'" type="button">{html.escape(f)}</button>' for f in r.followups)
             fu = f'<p class="note">이어서 물어보기</p><div>{fu}</div>' if fu else ""
