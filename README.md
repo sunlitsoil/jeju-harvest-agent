@@ -4,6 +4,13 @@
 「품종별 가격 전망」을 도구로 써서, 농가가 말로 물은 질문("월동무 지금 내도 될까?")에
 근거 숫자와 함께 답하는 AI Agent 시제품. 2026 제주 AI·빅데이터 활용 AI Agent 개발 챌린지 출품작(v0.3.3, 2026-11-08).
 
+## 시연
+
+- 시연 영상(86초, 화면 자막): [jeju-demo-v0.3.3.mp4](https://github.com/YHPARK-KR/jeju-harvest-agent/releases/download/v0.3.3/jeju-demo-v0.3.3.mp4) — 지난 흐름과 전망이 엇갈리는 답, 믿기 어려운 전망 제외, 제주어 질문과 시즌 밖 전환
+- 기준 릴리스: [v0.3.3](https://github.com/YHPARK-KR/jeju-harvest-agent/releases/tag/v0.3.3)
+
+![당근 조금 기다리면 값 오를까?](docs/img/2026-11-08-당근-기다리면.png)
+
 ## 실행
 
 필요한 것: Python 3.10 이상, 인터넷. 외부 패키지 설치 없음.
