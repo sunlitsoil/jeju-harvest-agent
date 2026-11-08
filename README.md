@@ -42,6 +42,7 @@ AGENT_PLANNER=rule LLM_BASE_URL=http://127.0.0.1:11434/v1 LLM_MODEL=qwen3.5:4b L
 | `app.py` | 웹 화면(큰 글씨, 예시 버튼, 그래프, 근거표, 에이전트가 한 일) + `/api/ask` JSON |
 | `cli.py` | 명령줄 |
 | `tests/` | 오프라인 재현 테스트와 2026-11-02 수집 응답 |
+| `docs/` | 사용자 매뉴얼, 데이터 활용 명세, 결과 설명자료, 화면 캡처 |
 
 ## 에이전트 흐름
 
