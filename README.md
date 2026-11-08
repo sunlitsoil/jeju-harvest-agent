@@ -10,7 +10,7 @@
 
 https://github.com/user-attachments/assets/3f37cfbc-a26d-45b2-99ce-a17a1d66c527
 
-기준 릴리스: [v0.3.3](https://github.com/devpark-yh/jeju-harvest-agent/releases/tag/v0.3.3)
+기준 릴리스: [v0.3.3](https://github.com/YHPARK-KR/jeju-harvest-agent/releases/tag/v0.3.3)
 
 ![당근 조금 기다리면 값 오를까?](docs/img/2026-11-08-당근-기다리면.png)
 
