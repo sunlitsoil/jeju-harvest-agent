@@ -289,6 +289,11 @@ def _josa(word: str, pair: str) -> str:
     return word + (pair[0] if has else pair[1])
 
 
+def _iso(s: str) -> str:
+    s = s.replace("-", "")
+    return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+
+
 def _ymd(s: str) -> str:
     s = s.replace("-", "")
     return f"{int(s[4:6])}/{int(s[6:8])}"
@@ -357,7 +362,7 @@ def answer(question: str) -> Result:
                              f"최근 {st['month_avg_n']}년 같은 달 평균(kg당 {_won(st['month_avg_5y'])})보다 {_pc(st['vs_5y_pct'])}입니다.")
             lines.append(f"참고 신호: [{sg['level']}] {sg['reason']}")
             res.evidence += [
-                ["최근 평균 도매가(원/kg)", _won(st["cur_price"]), f"{st['cur_from']}~{st['cur_to']}"],
+                ["최근 평균 도매가(원/kg)", _won(st["cur_price"]), f"{_iso(st['cur_from'])}~{_iso(st['cur_to'])}"],
                 ["직전 대비", _pc(st["price_chg_pct"]), "거래량 가중 평균"],
                 ["하루 평균 거래량(톤)", f"{st['cur_vol_per_day']:,.1f}", _pc(st["vol_chg_pct"])],
                 ["작년 같은 시기", _won(st.get("ly_price")), f"{st.get('ly_from')}~{st.get('ly_to')} ({st.get('ly_days')}거래일)"],
