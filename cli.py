@@ -12,16 +12,18 @@ def main() -> int:
     if "--json" in sys.argv:
         print(json.dumps(res.to_dict(), ensure_ascii=False, indent=2, default=str))
         return 0
+    if res.summary:
+        print("■ AI 한 줄 요약(숫자 검사 통과)\n" + res.summary + "\n")
     print("■ 답변\n" + res.answer)
     if res.evidence:
         print("\n■ 근거")
         for row in res.evidence:
             print("  - " + " | ".join(row))
-    print("\n■ 에이전트 실행 기록")
+    print("\n■ 에이전트 실행 기록 (" + ("LLM 계획" if res.planner == "llm" else "규칙 계획") + ")")
     for s in res.steps:
         print(f"  - {s.tool} {s.args if s.args else ''} {s.ms}ms {s.note}")
     if res.llm_rejected:
-        print("  - LLM 문장 폐기: " + res.llm_rejected)
+        print("  - AI 요약 폐기: " + res.llm_rejected)
     print("\n■ 유의")
     for c in res.caveats:
         print("  - " + c)

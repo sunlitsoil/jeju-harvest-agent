@@ -156,3 +156,76 @@ def signal(st: dict) -> dict:
     elif y is not None and y <= -10:
         rs += " 최근 5년 같은 달 평균보다 낮은 편입니다."
     return {"level": lv, "reason": rs}
+
+
+def market_compare(item: str, cultivar: str, asof: date | None = None, days: int = 28,
+                   min_share_pct: float = 3.0) -> dict:
+    """최근 days일 도매시장별 평균 도매가와 물량. 물량 비중이 min_share_pct 미만인 시장은
+    몇 건 거래로 값이 튈 수 있어 가격 순위에서 뺀다."""
+    asof = asof or latest_date()
+    start = asof - timedelta(days=days)
+    rows = tools.market_price(item, cultivar, _s(start), _s(asof))
+    total = next((r for r in rows if r["market"] == "전체"), None)
+    mk = [r for r in rows if r["market"] != "전체" and r.get("totalVolume")]
+    vol = sum(r["totalVolume"] for r in mk) or 1
+    out = []
+    for r in mk:
+        out.append({"market": r["market"], "avg_price": r["averagePrice"], "volume_t": r["totalVolume"],
+                    "share_pct": r["totalVolume"] / vol * 100})
+    ranked = sorted([m for m in out if m["share_pct"] >= min_share_pct], key=lambda m: -m["avg_price"])
+    return {"item": item, "cultivar": cultivar, "from": start.isoformat(), "to": asof.isoformat(),
+            "all_avg_price": total["averagePrice"] if total else None, "ranked": ranked,
+            "excluded": [m["market"] for m in out if m["share_pct"] < min_share_pct],
+            "min_share_pct": min_share_pct}
+
+
+def _forecast_ok(last: dict | None, weeks: list[dict], ref_price: float | None = None) -> bool:
+    """허브 전망이 마지막 실제 가격과 동떨어지면(0원, 1/3 미만, 3배 초과) 쓰지 않는다.
+    ref_price(전국 최근 평균)를 주면 그 시장의 마지막 실제 가격도 전국 평균의 1/3∼3배 안이어야 한다.
+    거래가 드문 시장에서 허브 모델이 0원 가까운 값을 내거나(2026-11-08 세척무·대구북부),
+    시장 가격 자체가 전국과 동떨어진 경우가 있다(같은 날 세척당근·안산도매 kg당 100원 대 전국 3,406원)."""
+    if not last or not last.get("price") or last["price"] <= 0 or not weeks:
+        return False
+    if ref_price and not (ref_price / 3 <= last["price"] <= ref_price * 3):
+        return False
+    return all(last["price"] / 3 <= w["price"] <= last["price"] * 3 for w in weeks)
+
+
+def forecast(item: str, cultivar: str, market: str | None = None, asof: date | None = None,
+             weeks: int = 4, tries: int = 3, ref_price: float | None = None) -> dict:
+    """허브 「품종별 가격 전망」을 요약한다. 시장을 안 주면 최근 4주 물량이 많은 시장부터
+    tries곳까지 물어 값이 정상인 첫 시장을 쓴다. 예측값은 허브가 낸 값이며 여기서는 인용·비교만 한다."""
+    asof = asof or latest_date()
+    avail = tools.forecast_items(_s(asof - timedelta(days=7)), _s(asof))
+    if (item, cultivar) not in {(a["item"], a["cultivar"]) for a in avail}:
+        return {"available": False, "reason": "not_offered", "item": item, "cultivar": cultivar,
+                "forecast_cultivars": sorted({a["cultivar"] for a in avail if a["item"] == item})}
+    if market:
+        candidates = [market]
+    else:
+        ms = tools.market_volume(item, cultivar, _s(asof - timedelta(days=28)), _s(asof))
+        candidates = [m["market"] for m in ms[:tries]] or ["서울가락도매"]
+    skipped = []
+    for mk in candidates:
+        try:
+            d = tools.price_forecast(item, cultivar, mk)
+        except tools.ToolError:
+            skipped.append(mk)
+            continue
+        actual = d.get("actual_data") or []
+        last = actual[-1] if actual else None
+        pred = [p for p in d.get("prediction_data") or [] if not last or p["date"] > last["date"]][:weeks]
+        weeks_out = []
+        for p in pred:
+            ci = p.get("confidence_interval") or {}
+            weeks_out.append({"week": p["date"], "price": p["price"], "lo": ci.get("lower_bound"),
+                              "hi": ci.get("upper_bound"), "vs_last_pct": _pct(p["price"], last and last["price"])})
+        if not _forecast_ok(last, weeks_out, ref_price):
+            skipped.append(mk)
+            continue
+        return {"available": True, "item": item, "cultivar": cultivar, "market": d.get("market", mk),
+                "base_date": d.get("base_date"), "last_week": last["date"], "last_price": last["price"],
+                "weeks": weeks_out, "actual_tail": [a for a in actual if a.get("price")][-8:],  # 휴장 주(0원)는 뺀다
+                "skipped": skipped}
+    return {"available": False, "reason": "implausible", "item": item, "cultivar": cultivar,
+            "skipped": skipped, "forecast_cultivars": []}

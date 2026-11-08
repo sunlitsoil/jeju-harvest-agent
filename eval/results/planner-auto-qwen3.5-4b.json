@@ -1,0 +1,739 @@
+{
+ "model": "qwen3.5:4b",
+ "date": "2026-11-08 19:35",
+ "rule": {
+  "planner": "rule",
+  "n": 20,
+  "cultivar_acc": 0.95,
+  "intent_acc": 0.85,
+  "avg_ms": null,
+  "rule_fallbacks": 0
+ },
+ "rule_rows": [
+  {
+   "q": "월동무 지금 내도 될까?",
+   "want": [
+    "월동무",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "got": [
+    "월동무",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "월동무 언제 내면 값이 좋아?",
+   "want": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "got": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "당근 요즘 시세 어때?",
+   "want": [
+    "당근(일반)",
+    [
+     "status"
+    ]
+   ],
+   "got": [
+    "당근(일반)",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "양배추 어느 시장에 많이 가?",
+   "want": [
+    "양배추(일반)",
+    [
+     "market"
+    ]
+   ],
+   "got": [
+    "양배추(일반)",
+    [
+     "market"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "조생양파 작년보다 비싸?",
+   "want": [
+    "조생양파",
+    [
+     "status"
+    ]
+   ],
+   "got": [
+    "조생양파",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "흙당근 조금 기다리면 값 오를까?",
+   "want": [
+    "흙당근",
+    [
+     "forecast"
+    ]
+   ],
+   "got": [
+    "흙당근",
+    [
+     "forecast"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "세척무 다음 주 전망 알려줘",
+   "want": [
+    "세척무",
+    [
+     "forecast"
+    ]
+   ],
+   "got": [
+    "세척무",
+    [
+     "forecast"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "양배추 가락시장 시세",
+   "want": [
+    "양배추(일반)",
+    [
+     "market",
+     "status"
+    ]
+   ],
+   "got": [
+    "양배추(일반)",
+    [
+     "market",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "깐마늘 몇 월에 팔면 제일 비싸?",
+   "want": [
+    "깐마늘",
+    [
+     "timing"
+    ]
+   ],
+   "got": [
+    "깐마늘",
+    [
+     "timing"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "세척당근 지금 팔까 말까",
+   "want": [
+    "세척당근",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "got": [
+    "세척당근",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "저장양배추 어느 도매시장이 값을 잘 쳐줘?",
+   "want": [
+    "저장양배추",
+    [
+     "market"
+    ]
+   ],
+   "got": [
+    "저장양배추",
+    [
+     "market"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "만생양파 가격 얼마야",
+   "want": [
+    "만생양파",
+    [
+     "status"
+    ]
+   ],
+   "got": [
+    "만생양파",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "당근 값 요새 어떵 되수꽈?",
+   "want": [
+    "당근(일반)",
+    [
+     "status"
+    ]
+   ],
+   "got": [
+    "당근(일반)",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "놈삐 이번 주에 내불카?",
+   "want": [
+    "월동무",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "got": [
+    null,
+    []
+   ],
+   "cultivar_ok": false,
+   "intent_ok": false,
+   "via": "rule"
+  },
+  {
+   "q": "양배추 지금 출하하면 손해일까?",
+   "want": [
+    "양배추(일반)",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "got": [
+    "양배추(일반)",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": false,
+   "via": "rule"
+  },
+  {
+   "q": "무는 보통 겨울 중 언제가 값이 높았어?",
+   "want": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "got": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "당근 엄궁 시장으로 보내면 어때?",
+   "want": [
+    "당근(일반)",
+    [
+     "market"
+    ]
+   ],
+   "got": [
+    "당근(일반)",
+    [
+     "market",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": false,
+   "via": "rule"
+  },
+  {
+   "q": "카트 몇 kg씩 실어야 해?",
+   "want": [
+    null,
+    []
+   ],
+   "got": [
+    null,
+    []
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "감귤 시세 알려줘",
+   "want": [
+    null,
+    []
+   ],
+   "got": [
+    null,
+    []
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  },
+  {
+   "q": "브로콜리 언제 팔아?",
+   "want": [
+    null,
+    []
+   ],
+   "got": [
+    null,
+    []
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule"
+  }
+ ],
+ "llm": {
+  "planner": "llm",
+  "n": 20,
+  "cultivar_acc": 0.95,
+  "intent_acc": 0.85,
+  "avg_ms": 2363,
+  "rule_fallbacks": 18
+ },
+ "llm_rows": [
+  {
+   "q": "월동무 지금 내도 될까?",
+   "want": [
+    "월동무",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "got": [
+    "월동무",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "월동무 언제 내면 값이 좋아?",
+   "want": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "got": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "당근 요즘 시세 어때?",
+   "want": [
+    "당근(일반)",
+    [
+     "status"
+    ]
+   ],
+   "got": [
+    "당근(일반)",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "양배추 어느 시장에 많이 가?",
+   "want": [
+    "양배추(일반)",
+    [
+     "market"
+    ]
+   ],
+   "got": [
+    "양배추(일반)",
+    [
+     "market"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "조생양파 작년보다 비싸?",
+   "want": [
+    "조생양파",
+    [
+     "status"
+    ]
+   ],
+   "got": [
+    "조생양파",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "흙당근 조금 기다리면 값 오를까?",
+   "want": [
+    "흙당근",
+    [
+     "forecast"
+    ]
+   ],
+   "got": [
+    "흙당근",
+    [
+     "forecast"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "세척무 다음 주 전망 알려줘",
+   "want": [
+    "세척무",
+    [
+     "forecast"
+    ]
+   ],
+   "got": [
+    "세척무",
+    [
+     "forecast"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "양배추 가락시장 시세",
+   "want": [
+    "양배추(일반)",
+    [
+     "market",
+     "status"
+    ]
+   ],
+   "got": [
+    "양배추(일반)",
+    [
+     "market",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "깐마늘 몇 월에 팔면 제일 비싸?",
+   "want": [
+    "깐마늘",
+    [
+     "timing"
+    ]
+   ],
+   "got": [
+    "깐마늘",
+    [
+     "timing"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "세척당근 지금 팔까 말까",
+   "want": [
+    "세척당근",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "got": [
+    "세척당근",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "저장양배추 어느 도매시장이 값을 잘 쳐줘?",
+   "want": [
+    "저장양배추",
+    [
+     "market"
+    ]
+   ],
+   "got": [
+    "저장양배추",
+    [
+     "market"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "만생양파 가격 얼마야",
+   "want": [
+    "만생양파",
+    [
+     "status"
+    ]
+   ],
+   "got": [
+    "만생양파",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "당근 값 요새 어떵 되수꽈?",
+   "want": [
+    "당근(일반)",
+    [
+     "status"
+    ]
+   ],
+   "got": [
+    "당근(일반)",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "놈삐 이번 주에 내불카?",
+   "want": [
+    "월동무",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "got": [
+    "월동무",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "llm"
+  },
+  {
+   "q": "양배추 지금 출하하면 손해일까?",
+   "want": [
+    "양배추(일반)",
+    [
+     "forecast",
+     "status"
+    ]
+   ],
+   "got": [
+    "양배추(일반)",
+    [
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": false,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "무는 보통 겨울 중 언제가 값이 높았어?",
+   "want": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "got": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "당근 엄궁 시장으로 보내면 어때?",
+   "want": [
+    "당근(일반)",
+    [
+     "market"
+    ]
+   ],
+   "got": [
+    "당근(일반)",
+    [
+     "market",
+     "status"
+    ]
+   ],
+   "cultivar_ok": true,
+   "intent_ok": false,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "카트 몇 kg씩 실어야 해?",
+   "want": [
+    null,
+    []
+   ],
+   "got": [
+    "월동무",
+    [
+     "timing"
+    ]
+   ],
+   "cultivar_ok": false,
+   "intent_ok": false,
+   "via": "llm"
+  },
+  {
+   "q": "감귤 시세 알려줘",
+   "want": [
+    null,
+    []
+   ],
+   "got": [
+    null,
+    []
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  },
+  {
+   "q": "브로콜리 언제 팔아?",
+   "want": [
+    null,
+    []
+   ],
+   "got": [
+    null,
+    []
+   ],
+   "cultivar_ok": true,
+   "intent_ok": true,
+   "via": "rule-fallback"
+  }
+ ]
+}
