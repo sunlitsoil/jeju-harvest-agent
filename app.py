@@ -65,7 +65,9 @@ def render(q: str) -> str:
             cav = "".join(f"<li>{html.escape(c)}</li>" for c in r.caveats)
             summary = (f'<div class="sum"><b>AI가 고른 핵심 문장 · 아래 답변에서 그대로 옮김</b><br>{html.escape(r.summary)}</div>'
                        if r.summary else "")
-            body = (f'{summary}<div class="ans">{"".join(f"<p>{html.escape(l)}</p>" for l in (r.lines or [r.answer]))}</div>{svg_chart(r.chart)}'
+            fu = "".join(f'<button onclick="location.href=\'?q={urllib.parse.quote(f)}\'" type="button">{html.escape(f)}</button>' for f in r.followups)
+            fu = f'<p class="note">이어서 물어보기</p><div>{fu}</div>' if fu else ""
+            body = (f'{summary}<div class="ans">{"".join(f"<p>{html.escape(l)}</p>" for l in (r.lines or [r.answer]))}</div>{fu}{svg_chart(r.chart)}'
                     f'<details open><summary>근거 숫자</summary><table>{rows}</table></details>'
                     f'<details><summary>에이전트가 한 일</summary><ol>{steps}</ol>'
                     f'{"<p>AI 요약 폐기: " + html.escape(r.llm_rejected) + "</p>" if r.llm_rejected else ""}</details>'

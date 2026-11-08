@@ -19,6 +19,8 @@ from . import analysis, tools
 # 질문 속 단어 → (품목, 기본 품종). 품종 이름이 직접 나오면 그 품종을 쓴다.
 ITEM_ALIASES = [
     ("월동무", ("무", "월동무")),
+    ("놈삐", ("무", "월동무")),  # 제주어. 2026-11-08 보류 평가 뒤 추가(보류 30문항 수치는 추가 전 값)
+    ("놈비", ("무", "월동무")),
     ("세척무", ("무", "세척무")),
     ("흙당근", ("당근", "흙당근")),
     ("세척당근", ("당근", "세척당근")),
@@ -77,6 +79,7 @@ class Result:
     lines: list[str] = field(default_factory=list)  # 화면에서 한 줄씩 보여 줄 답변 문장
     summary: str = ""  # AI가 고른 핵심 문장(본문 문장 그대로). 본문 answer는 항상 코드가 만든 문장이다
     picked: list[int] = field(default_factory=list)
+    followups: list[str] = field(default_factory=list)
     llm_used: bool = False
     llm_rejected: str = ""
     market: str | None = None
@@ -110,6 +113,32 @@ def parse_market(question: str) -> str | None:
         if word in q:
             return name
     return None
+
+
+PERIOD_WORDS = ["지난달", "지난주", "지난해 ", "저번달", "저번주"]
+
+
+def unsupported(question: str) -> list[str]:
+    """아직 못 하는 요청(두 품목 비교, 특정 기간 지정)을 찾아 미리 밝힐 문장을 돌려준다."""
+    q = question.replace(" ", "")
+    hits = [w for w, _ in ITEM_ALIASES if w in q]
+    hits = [w for w in hits if not any(w != o and w in o for o in hits)]  # 「세척당근」 안의 「당근」은 뺀다
+    items = []
+    for w in hits:
+        it = dict(ITEM_ALIASES)[w][0]
+        if it not in items:
+            items.append(it)
+    out = []
+    if len(items) >= 2:
+        out.append(f"두 품목을 한 번에 비교하는 기능은 아직 없어 {items[0]}만 답합니다. {items[1]}는 따로 물어봐 주세요.")
+    if any(w.replace(" ", "") in q for w in PERIOD_WORDS):
+        out.append("기간(지난달·지난주 등)을 골라 보는 기능은 아직 없어 가장 최근 자료 기준으로 답합니다.")
+    return out
+
+
+def _intent_explicit(question: str) -> bool:
+    q = question.replace(" ", "")
+    return any(w.replace(" ", "") in q for ws in INTENT_WORDS.values() for w in ws) or any(w in q for w in DECIDE_WORDS)
 
 
 def _llm(messages: list[dict], max_tokens: int = 500) -> str | None:
@@ -264,10 +293,12 @@ def plan(question: str) -> dict:
     out = {"planner": "rule", "steps": []}
     mode = os.environ.get("AGENT_PLANNER", "auto")  # llm: LLM 먼저 | auto: 규칙이 품목을 못 찾을 때만 LLM | rule
     rule_found = target is not None
-    p = llm_plan(question) if mode == "llm" or (mode == "auto" and target is None) else None
+    # auto: 규칙이 작물을 못 찾았거나, 작물은 찾았지만 의도를 가리키는 말이 하나도 없을 때 LLM에 묻는다
+    ask = mode == "llm" or (mode == "auto" and (target is None or not _intent_explicit(question)))
+    p = llm_plan(question) if ask else None
     if p:
         out["planner"] = "llm"
-        target = p["target"] or target
+        target = target if (rule_found and mode == "auto") else (p["target"] or target)  # auto에서는 규칙이 찾은 작물을 지킨다
         intents = p["intents"] or intents
         market = p["market"] or market
         out["steps"].append(Step(tool="llm_plan", args={"tools": p["tools"]}, ms=p["ms"],
@@ -298,6 +329,7 @@ def answer(question: str) -> Result:
     res.intents = intents
     asof = _run(res, "data_period", lambda: analysis.latest_date())
     lines: list[str] = []
+    lines += unsupported(question)
     if pl.get("llm_target"):  # 규칙이 못 찾은 작물을 AI가 읽은 경우: 잘못 읽었을 수 있으니 먼저 밝힌다
         lines.append(f"질문에서 작물 이름을 바로 찾지 못해 AI가 「{res.cultivar}」로 읽었습니다. 다른 작물이면 작물 이름을 넣어 다시 물어봐 주세요.")
 
@@ -366,7 +398,8 @@ def answer(question: str) -> Result:
         res.facts["market_price"] = mc
         if mc and mc["ranked"]:
             best = ", ".join(f"{m['market']}(kg당 {_won(m['avg_price'])})" for m in mc["ranked"][:3])
-            lines.append(f"최근 4주 물량 비중 {mc['min_share_pct']:.0f}% 이상인 시장 가운데 평균 도매가가 높았던 곳은 {best}입니다.")
+            lines.append(f"최근 4주 물량 비중 {mc['min_share_pct']:.0f}% 이상인 시장 가운데 평균 도매가가 높았던 곳은 {best}입니다. "
+                         "운송비를 빼지 않은 시장 가격 비교라 제주 출하처 추천은 아닙니다.")
             if market:
                 mine = next((m for m in mc["ranked"] + [] if m["market"] == market), None)
                 if mine:
@@ -400,7 +433,8 @@ def answer(question: str) -> Result:
         elif fc["weeks"]:
             w = fc["weeks"]
             seq = ", ".join(f"{_ymd(x['week'])} 주 {_won(x['price'])}" for x in w)
-            lines.append(f"제주데이터허브 가격 전망은 {fc['market']} 기준(기준일 {_ymd(fc['base_date'])})으로, "
+            where = fc["market"] if market else f"{fc['market']}(최근 4주 물량 {len(fc.get('skipped') or []) + 1}위)"
+            lines.append(f"제주데이터허브 가격 전망은 {where} 기준(기준일 {_ymd(fc['base_date'])})으로, "
                          f"지난 실제 주({_ymd(fc['last_week'])} 주) kg당 {_won(fc['last_price'])} 다음을 {seq}으로 봅니다. "
                          f"{len(w)}주 뒤 전망은 지난 실제 주보다 {_pc(w[-1]['vs_last_pct'])}이고, "
                          f"전망 범위는 kg당 {_won(w[-1]['lo'])}∼{_won(w[-1]['hi'])}입니다.")
@@ -413,6 +447,8 @@ def answer(question: str) -> Result:
             cur = (res.facts.get("status") or {}).get("cur_price")
             if cur and abs(fc["last_price"] / cur - 1) > 0.4:
                 lines.append(f"이 전망은 {fc['market']} 한 곳의 값이라 위의 전국 도매시장 평균과 차이가 큽니다. 흐름(오르내림)만 참고하세요.")
+            elif cur:
+                lines.append(f"위 시세는 전국 도매시장 평균이고 전망은 {fc['market']} 한 곳의 값이라 금액이 서로 다릅니다.")
             for x in w:
                 res.evidence.append([f"허브 전망 {_ymd(x['week'])} 주 ({fc['market']})", _won(x["price"]),
                                      f"범위 {_won(x['lo'])}∼{_won(x['hi'])} · 지난 실제 주 대비 {_pc(x['vs_last_pct'])}"])
@@ -428,6 +464,10 @@ def answer(question: str) -> Result:
     ]
     if "forecast" in res.facts and res.facts["forecast"].get("available"):
         res.caveats.append("가격 전망은 제주데이터허브 「품종별 가격 전망」이 낸 값을 그대로 옮긴 것입니다. 이 서비스가 따로 예측하지 않습니다.")
+    # 이번에 안 본 분석을 다음 질문 버튼으로 권한다(문장은 코드가 만든다)
+    nxt = {"forecast": f"{res.cultivar} 앞으로 몇 주 전망은?", "timing": f"{res.cultivar} 언제 내면 값이 좋아?",
+           "market": f"{res.cultivar} 어느 시장이 값이 좋아?", "status": f"{res.cultivar} 지금 시세 어때?"}
+    res.followups = [q for k, q in nxt.items() if k not in intents][:3]
     base_answer = " ".join(lines)
     res.lines = lines
     res.answer = base_answer

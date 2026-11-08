@@ -138,7 +138,7 @@ def market_share(item: str, cultivar: str, asof: date | None = None, days: int =
 
 def signal(st: dict) -> dict:
     """지난 7거래일 흐름을 세 가지 참고 신호로 요약한다. 판매 권유가 아니라 계산식을 그대로 말로 옮긴 것이다.
-    오름세: 가격 +3% 이상이고 거래량 +20% 미만 / 내림세: 가격 -3% 이하이고 거래량 +20% 이상 / 그 밖: 보합"""
+    방향은 가격 변화율로만 정한다(오름세 +3% 이상, 내림세 -3% 이하, 그 밖 보합). 거래량 변화(±20%)는 따로 덧붙인다."""
     if not st.get("in_season"):
         return {"level": "거래없음", "reason": "최근 2주 거래 기록이 없어 시세 판단을 할 수 없습니다."}
     p, v, y = st.get("price_chg_pct"), st.get("vol_chg_pct"), st.get("vs_5y_pct")
@@ -146,12 +146,16 @@ def signal(st: dict) -> dict:
     down = p is not None and p <= -3
     flood = v is not None and v >= 20
     high = y is not None and y >= 10
-    if up and not flood:
-        lv, rs = "오름세", "가격이 직전보다 3% 이상 올랐고 거래량 증가는 20% 미만입니다."
-    elif down and flood:
-        lv, rs = "내림세", "가격이 직전보다 3% 이상 내렸고 거래량은 20% 이상 늘었습니다."
+    if up:
+        lv, rs = "오름세", "가격이 직전 7거래일보다 3% 이상 올랐습니다."
+    elif down:
+        lv, rs = "내림세", "가격이 직전 7거래일보다 3% 이상 내렸습니다."
     else:
-        lv, rs = "보합", "가격과 물량이 위 두 조건(±3%, 거래량 20%)에 걸리지 않습니다."
+        lv, rs = "보합", "가격 변화가 직전 7거래일 대비 ±3% 안입니다."
+    if flood:
+        rs += " 거래량은 20% 이상 늘어 물량이 몰리고 있습니다."
+    elif v is not None and v <= -20:
+        rs += " 거래량은 20% 이상 줄었습니다."
     if high:
         rs += " 최근 5년 같은 달 평균보다 높은 편입니다."
     elif y is not None and y <= -10:

@@ -175,5 +175,51 @@ class LlmTargetNoticeTest(unittest.TestCase):
         self.assertIn("AI가 「월동무」로 읽었습니다", r.lines[0])
 
 
+class SignalTest(unittest.TestCase):
+    """R2 지적: 방향은 가격 변화율로만 정한다. 거래량은 따로 말한다."""
+    def _sig(self, p, v):
+        return analysis.signal({"in_season": True, "price_chg_pct": p, "vol_chg_pct": v, "vs_5y_pct": 0})
+
+    def test_price_down_without_volume_change_is_down(self):
+        self.assertEqual(self._sig(-10, 0)["level"], "내림세")
+
+    def test_price_up_with_volume_flood_is_still_up(self):
+        s = self._sig(10, 30)
+        self.assertEqual(s["level"], "오름세")
+        self.assertIn("물량이 몰리고", s["reason"])
+
+    def test_small_change_is_flat(self):
+        self.assertEqual(self._sig(2.9, -25)["level"], "보합")
+
+
+class GuardrailTest(unittest.TestCase):
+    def test_two_items_and_period_disclosed(self):
+        u = agent.unsupported("무랑 당근 지난달 시세 비교")
+        self.assertEqual(len(u), 2)
+        self.assertIn("두 품목", u[0])
+
+    def test_cultivar_inside_other_name_not_double_counted(self):
+        self.assertEqual(agent.unsupported("세척당근 시세"), [])
+
+    def test_jeju_word_mapped_by_rule(self):
+        self.assertEqual(agent.parse("놈삐 값 어떵?")[0], ("무", "월동무"))
+
+    def test_followups_offer_unrun_analyses(self):
+        r = agent.answer("당근 요즘 시세 어때?")
+        self.assertIn("당근(일반) 앞으로 몇 주 전망은?", r.followups)
+
+    def test_auto_asks_llm_when_no_intent_word_but_keeps_rule_crop(self):
+        os.environ["LLM_MODEL"] = "fake"
+        orig = agent._llm_tools
+        agent._llm_tools = _fake_tool_calls([("price_forecast", {"cultivar": "세척무"})])
+        try:
+            p = agent.plan("당근 손해 보카?")
+        finally:
+            agent._llm_tools = orig
+            os.environ.pop("LLM_MODEL", None)
+        self.assertEqual(p["target"], ("당근", "당근(일반)"))
+        self.assertEqual(p["intents"], ["forecast"])
+
+
 if __name__ == "__main__":
     unittest.main()
