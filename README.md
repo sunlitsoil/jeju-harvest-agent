@@ -2,7 +2,7 @@
 
 제주데이터허브 응용서비스 「농산물 분석」(일별 도매가격·거래량·도매시장별 물량과 가격)과
 「품종별 가격 전망」을 도구로 써서, 농가가 말로 물은 질문("월동무 지금 내도 될까?")에
-근거 숫자와 함께 답하는 AI Agent 시제품. 2026 제주 AI·빅데이터 활용 AI Agent 개발 챌린지 출품작(v0.3, 2026-11-08).
+근거 숫자와 함께 답하는 AI Agent 시제품. 2026 제주 AI·빅데이터 활용 AI Agent 개발 챌린지 출품작(v0.3.3, 2026-11-08).
 
 ## 실행
 
@@ -13,7 +13,7 @@
 python3 app.py                 # 브라우저에서 http://127.0.0.1:8765
 python3 cli.py "당근 요즘 시세 어때?"
 python3 cli.py "월동무 언제 내면 값이 좋아?" --json
-python3 -m unittest discover -s tests -v   # 인터넷 없이 저장 응답으로 재현(26개)
+python3 -m unittest discover -s tests -v   # 인터넷 없이 저장 응답으로 재현(28개)
 python3 eval/eval_planner.py               # 계획기 평가(EVAL_QS=holdout_questions.json 등으로 문항 묶음 선택)
 python3 eval/forecast_coverage.py          # 허브 전망 제공 품종별 실음·제외와 이상값 배수 2·3·5 비교
 ```
@@ -25,8 +25,8 @@ python3 eval/forecast_coverage.py          # 허브 전망 제공 품종별 실�
 LLM을 붙이려면 `.env.example`을 보고 환경변수를 준다. 예(Ollama):
 
 ```bash
-AGENT_PLANNER=rule LLM_BASE_URL=http://127.0.0.1:11434/v1 LLM_MODEL=qwen3.5:4b LLM_REASONING_EFFORT=none python3 app.py   # 센터 권장: 규칙 계획 + 4B는 핵심 문장 고르기만
-AGENT_PLANNER=llm LLM_BASE_URL=... LLM_MODEL=<큰 모델> python3 app.py                    # LLM이 먼저 도구 선택
+AGENT_PLANNER=llm LLM_BASE_URL=... LLM_MODEL=<큰 모델> python3 app.py                    # 권장(외부 API 허용 시): LLM이 먼저 도구 선택, 평가 모델 gemma4 31B
+AGENT_PLANNER=rule LLM_BASE_URL=http://127.0.0.1:11434/v1 LLM_MODEL=qwen3.5:4b LLM_REASONING_EFFORT=none python3 app.py   # 대체(외부 API 없음): 규칙 계획 + 4B는 핵심 문장 고르기만(선택)
 ```
 
 센터 운영 PC 최소사양(i7-8700 / GTX 1060 / RAM 32GB)에서 규칙 모드는 CPU만 쓴다.
