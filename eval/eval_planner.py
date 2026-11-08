@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from jeju_agent import agent  # noqa: E402
 
-QS = json.loads((ROOT / "eval" / "planner_questions.json").read_text(encoding="utf-8"))
+QS = json.loads((ROOT / "eval" / os.environ.get("EVAL_QS", "planner_questions.json")).read_text(encoding="utf-8"))
 
 
 def rule(q):
