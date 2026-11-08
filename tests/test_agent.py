@@ -39,7 +39,7 @@ class AnswerTest(unittest.TestCase):
         st = r.facts["status"]
         self.assertTrue(st["in_season"])
         self.assertIn(f"{st['cur_price']:,.0f}원", r.answer)
-        self.assertIn(r.facts["signal"]["level"], ("유리", "보통", "주의"))
+        self.assertIn(r.facts["signal"]["level"], ("오름세", "보합", "내림세"))
 
     def test_market_share_sums_to_100(self):
         ms = analysis.market_share("양배추", "양배추(일반)", asof=analysis.latest_date())
@@ -127,7 +127,9 @@ class LlmPlannerTest(unittest.TestCase):
         self.assertEqual(called, [])
 
 
-class SummaryGuardTest(unittest.TestCase):
+class PickGuardTest(unittest.TestCase):
+    """AI 핵심 문장 고르기. 2026-11-08 자유 요약 평가에서 나온 두 오류(①2,068원을 서울가락도매 값으로 잘못 이음
+    ②숫자는 맞고 이유를 잘못 이음)는 LLM이 문장을 새로 쓸 수 있어서 생겼다. 번호만 받으면 둘 다 생길 수 없다."""
     def setUp(self):
         self._orig = agent._llm
 
@@ -135,27 +137,42 @@ class SummaryGuardTest(unittest.TestCase):
         agent._llm = self._orig
 
     def _res(self):
-        r = agent.Result(question="당근 시세", cultivar="당근(일반)")
-        return r, "당근(일반) 최근 7거래일 평균 도매가는 kg당 2,068원입니다. 제주데이터허브 가격 전망은 서울가락도매 기준 1,794원입니다."
+        r = agent.Result(question="당근 기다리면 오를까", cultivar="당근(일반)")
+        r.lines = ["당근(일반) 최근 7거래일 평균 도매가는 kg당 2,068원입니다.",
+                   "제주데이터허브 가격 전망은 서울가락도매 기준 1,794원입니다."]
+        return r
 
-    def test_accepts_faithful_summary(self):
-        r, base = self._res()
-        agent._llm = lambda *a, **k: "당근(일반)은 최근 7거래일 kg당 2,068원이고, 제주데이터허브 전망은 1,794원입니다."
-        agent._polish(r, base)
-        self.assertTrue(r.summary)
+    def test_picked_lines_are_verbatim(self):
+        r = self._res()
+        agent._llm = lambda *a, **k: "2"
+        agent._polish(r, "")
+        self.assertEqual(r.summary, r.lines[1])
 
-    def test_rejects_new_number(self):
-        r, base = self._res()
-        agent._llm = lambda *a, **k: "당근은 kg당 2,500원입니다."
-        agent._polish(r, base)
+    def test_rewritten_sentence_rejected(self):
+        # 사례①: 숫자를 다른 시장에 붙인 문장을 돌려주면 버린다
+        r = self._res()
+        agent._llm = lambda *a, **k: "서울가락도매 당근은 kg당 2,068원입니다."
+        agent._polish(r, "")
         self.assertEqual(r.summary, "")
-        self.assertIn("2500", r.llm_rejected)
+        self.assertIn("번호가 아닌", r.llm_rejected)
 
-    def test_rejects_market_not_in_evidence_and_unsourced_forecast(self):
-        r, base = self._res()
-        agent._llm = lambda *a, **k: "구리도매 전망은 1,794원입니다."
-        agent._polish(r, base)
+    def test_out_of_range_rejected(self):
+        r = self._res()
+        agent._llm = lambda *a, **k: "1,7"
+        agent._polish(r, "")
         self.assertEqual(r.summary, "")
+
+
+class LlmTargetNoticeTest(unittest.TestCase):
+    def test_llm_read_crop_is_disclosed(self):
+        orig = agent.plan
+        agent.plan = lambda q: {"planner": "llm", "steps": [], "target": ("무", "월동무"), "intents": ["status"],
+                                "market": None, "llm_target": True}
+        try:
+            r = agent.answer("놈삐 시세 어떵?")
+        finally:
+            agent.plan = orig
+        self.assertIn("AI가 「월동무」로 읽었습니다", r.lines[0])
 
 
 if __name__ == "__main__":

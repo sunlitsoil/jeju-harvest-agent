@@ -75,7 +75,8 @@ class Result:
     caveats: list[str] = field(default_factory=list)
     chart: dict | None = None
     lines: list[str] = field(default_factory=list)  # 화면에서 한 줄씩 보여 줄 답변 문장
-    summary: str = ""  # LLM 한 줄 요약(가드 통과분만). 본문 answer는 항상 코드가 만든 문장이다
+    summary: str = ""  # AI가 고른 핵심 문장(본문 문장 그대로). 본문 answer는 항상 코드가 만든 문장이다
+    picked: list[int] = field(default_factory=list)
     llm_used: bool = False
     llm_rejected: str = ""
     market: str | None = None
@@ -216,18 +217,18 @@ def _llm_parse(question: str) -> tuple[str, str] | None:
 
 
 # ---------------------------------------------------------------- 실행
-def _run(res: Result, name: str, fn, optional: bool = False, **kw):
+def _run(res: Result, name: str, fn, optional: bool = False, why: str = "", **kw):
     t0 = time.time()
     try:
         out = fn(**kw)
     except tools.ToolError as e:
         if not optional:
             raise
-        res.steps.append(Step(tool=name, args={}, ms=int((time.time() - t0) * 1000), note=f"실패: {e}"))
+        res.steps.append(Step(tool=name, args={}, ms=int((time.time() - t0) * 1000), note=f"{why} → 실패: {e}".lstrip(" →")))
         return None
     st = Step(tool=name, args={k: (v.isoformat() if hasattr(v, "isoformat") else round(v) if isinstance(v, float) else v)
                                for k, v in kw.items() if v is not None},
-              ms=int((time.time() - t0) * 1000))
+              ms=int((time.time() - t0) * 1000), note=why)
     if isinstance(out, dict):
         st.rows = len(out.get("daily") or out.get("profile") or out.get("markets") or out.get("ranked")
                       or out.get("weeks") or [])
@@ -243,6 +244,13 @@ def _pc(x):
     return "-" if x is None else f"{x:+.1f}%"
 
 
+def _josa(word: str, pair: str) -> str:
+    """받침이 있으면 pair[0](은·을), 없으면 pair[1](는·를). 괄호로 끝나면 괄호 앞 글자로 본다."""
+    ch = word.rstrip(")").split("(")[0][-1:] if word.endswith(")") else word[-1:]
+    has = bool(ch) and "가" <= ch <= "힣" and (ord(ch) - 0xAC00) % 28 != 0
+    return word + (pair[0] if has else pair[1])
+
+
 def _ymd(s: str) -> str:
     s = s.replace("-", "")
     return f"{int(s[4:6])}/{int(s[6:8])}"
@@ -255,6 +263,7 @@ def plan(question: str) -> dict:
     market = parse_market(question)
     out = {"planner": "rule", "steps": []}
     mode = os.environ.get("AGENT_PLANNER", "auto")  # llm: LLM 먼저 | auto: 규칙이 품목을 못 찾을 때만 LLM | rule
+    rule_found = target is not None
     p = llm_plan(question) if mode == "llm" or (mode == "auto" and target is None) else None
     if p:
         out["planner"] = "llm"
@@ -269,7 +278,8 @@ def plan(question: str) -> dict:
             out["steps"].append(Step(tool="llm_parse", args={}, note="규칙으로 품목을 못 찾아 LLM이 해석"))
     if market and "market" not in intents and "forecast" not in intents:
         intents.append("market")
-    out.update(target=target, intents=intents if target else [], market=market)
+    out.update(target=target, intents=intents if target else [], market=market,
+               llm_target=bool(target) and not rule_found)
     return out
 
 
@@ -288,9 +298,11 @@ def answer(question: str) -> Result:
     res.intents = intents
     asof = _run(res, "data_period", lambda: analysis.latest_date())
     lines: list[str] = []
+    if pl.get("llm_target"):  # 규칙이 못 찾은 작물을 AI가 읽은 경우: 잘못 읽었을 수 있으니 먼저 밝힌다
+        lines.append(f"질문에서 작물 이름을 바로 찾지 못해 AI가 「{res.cultivar}」로 읽었습니다. 다른 작물이면 작물 이름을 넣어 다시 물어봐 주세요.")
 
     if "status" in intents or "timing" not in intents and "market" not in intents:
-        st = _run(res, "recent_status", analysis.recent_status, item=res.item, cultivar=res.cultivar, asof=asof)
+        st = _run(res, "recent_status", analysis.recent_status, why="현재 시세부터 보려고 최근 7거래일을 봅니다", item=res.item, cultivar=res.cultivar, asof=asof)
         sg = analysis.signal(st)
         res.facts["status"] = st
         res.facts["signal"] = sg
@@ -314,13 +326,14 @@ def answer(question: str) -> Result:
                          "x": [r["baseDate"] for r in st["daily"]],
                          "y": [r["wholesalePrice"] for r in st["daily"]]}
         else:
-            lines.append(f"{res.cultivar}는 최근 2주 동안 거래 기록이 없습니다(최근 60일 안 마지막 거래일: {st.get('last_trade') or '없음'}). "
+            lines.append(f"{_josa(res.cultivar, '은는')} 최근 2주 동안 거래 기록이 없습니다(최근 60일 안 마지막 거래일: {_ymd(st['last_trade']) if st.get('last_trade') else '없음'}). "
                          f"아직 출하 시즌이 아니거나 시즌이 끝난 시기입니다. 지난 시즌에 언제 값이 좋았는지 함께 보여드립니다.")
             if "timing" not in intents:
                 intents.append("timing")
+                res.steps[-1].note += " → 최근 2주 거래가 없어 지난 시즌 분석으로 바꿉니다"
 
     if "timing" in intents:
-        sp = _run(res, "season_profile", analysis.season_profile, item=res.item, cultivar=res.cultivar, asof=asof)
+        sp = _run(res, "season_profile", analysis.season_profile, why="출하 시기를 보려고 지난 시즌을 반달 단위로 나눕니다", item=res.item, cultivar=res.cultivar, asof=asof)
         res.facts["season"] = sp
         if sp["best"]:
             best = ", ".join(f"{b['label']}(kg당 {_won(b['avg_price'])})" for b in sp["best"])
@@ -341,13 +354,14 @@ def answer(question: str) -> Result:
             lines.append("지난 시즌 거래 기록이 부족해 시기 비교를 할 수 없습니다.")
 
     if "market" in intents:
-        ms = _run(res, "market_share", analysis.market_share, item=res.item, cultivar=res.cultivar, asof=asof)
+        ms = _run(res, "market_share", analysis.market_share, why="어느 시장인지 묻는 질문이라 시장별 물량을 봅니다", item=res.item, cultivar=res.cultivar, asof=asof)
         res.facts["market"] = ms
         top = ", ".join(f"{m['market']} {m['share_pct']:.0f}%" for m in ms["markets"][:3])
         lines.append(f"최근 1년 {res.cultivar} 거래량은 {top} 순으로 많았습니다.")
         for m in ms["markets"]:
             res.evidence.append([m["market"] + " (1년 물량)", f"{m['volume_t']:,.0f}톤", f"{m['share_pct']:.1f}%"])
-        mc = _run(res, "market_compare", analysis.market_compare, optional=True, item=res.item,
+        mc = _run(res, "market_compare", analysis.market_compare, optional=True,
+                  why="물량이 작은 시장을 빼고 최근 4주 평균가를 비교합니다", item=res.item,
                   cultivar=res.cultivar, asof=asof)
         res.facts["market_price"] = mc
         if mc and mc["ranked"]:
@@ -367,16 +381,21 @@ def answer(question: str) -> Result:
 
     if "forecast" in intents:
         ref = (res.facts.get("status") or {}).get("cur_price")
-        fc = _run(res, "price_forecast", analysis.forecast, optional=True, item=res.item,
+        fc = _run(res, "price_forecast", analysis.forecast, optional=True,
+                  why="앞으로를 묻는 질문이라 제주데이터허브 전망을 가져옵니다", item=res.item,
                   cultivar=res.cultivar, market=market, asof=asof, ref_price=ref)
         res.facts["forecast"] = fc or {}
+        if fc and fc.get("skipped"):
+            res.steps[-1].note += f" → 이상값 검사로 {', '.join(fc['skipped'])} 전망을 뺐습니다"
+        if fc and not fc["available"] and fc.get("reason") == "not_offered":
+            res.steps[-1].note += " → 이 품종은 허브 전망 대상이 아니라 싣지 않습니다"
         if fc is None:
             lines.append("제주데이터허브 가격 전망을 지금 불러오지 못했습니다. 잠시 뒤 다시 물어봐 주세요.")
         elif not fc["available"] and fc.get("reason") == "implausible":
             lines.append(f"제주데이터허브 가격 전망({', '.join(fc['skipped'])})은 그 시장 가격이 전국 평균이나 최근 실제 가격과 크게 어긋나 이번 답에서는 싣지 않았습니다.")
         elif not fc["available"]:
             alt = ", ".join(fc["forecast_cultivars"]) or "없음"
-            lines.append(f"제주데이터허브의 「품종별 가격 전망」은 {res.cultivar}를 제공하지 않습니다"
+            lines.append(f"제주데이터허브의 「품종별 가격 전망」은 {_josa(res.cultivar, '을를')} 제공하지 않습니다"
                          f"(같은 품목의 전망 품종: {alt}).")
         elif fc["weeks"]:
             w = fc["weeks"]
@@ -389,7 +408,7 @@ def answer(question: str) -> Result:
                 lines.append(f"({', '.join(fc['skipped'])} 전망은 가격이 전국 평균이나 실제 가격과 크게 어긋나 건너뛰었습니다.)")
             lv = (res.facts.get("signal") or {}).get("level")
             chg = w[-1]["vs_last_pct"] or 0
-            if (lv == "유리" and chg <= -3) or (lv == "주의" and chg >= 3):
+            if (lv == "오름세" and chg <= -3) or (lv == "내림세" and chg >= 3):
                 lines.append(f"지난 흐름으로 본 참고 신호([{lv}])와 허브 전망의 방향이 서로 다릅니다. 두 근거를 함께 보고 판단하세요.")
             cur = (res.facts.get("status") or {}).get("cur_price")
             if cur and abs(fc["last_price"] / cur - 1) > 0.4:
@@ -404,7 +423,7 @@ def answer(question: str) -> Result:
                              "split": len(fc["actual_tail"])}
 
     res.caveats = [
-        f"제주데이터허브 농산물 유통 분석 데이터(수록 최종일 {asof.isoformat()}) 기준입니다. 산지 가격이 아니라 전국 도매시장 경락 가격입니다.",
+        f"제주데이터허브 농산물 유통 분석 데이터(수록 최종일 {asof.isoformat()}) 기준입니다. 산지 가격이 아니라 전국 도매시장 경락 가격(운송비 차감 전)이며, 제주산 출하분만 따로 집계했는지는 확인하지 못했습니다.",
         "가격 신호는 과거 흐름을 요약한 참고 자료입니다. 날씨·작황·계약 조건은 반영하지 않으니 판매 결정은 농가가 직접 하세요.",
     ]
     if "forecast" in res.facts and res.facts["forecast"].get("available"):
@@ -412,7 +431,7 @@ def answer(question: str) -> Result:
     base_answer = " ".join(lines)
     res.lines = lines
     res.answer = base_answer
-    _polish(res, base_answer)  # 본문은 그대로 두고 요약만 따로 붙인다
+    _polish(res, base_answer)  # 본문은 그대로 두고 AI가 고른 핵심 문장만 위에 따로 올린다
     return res
 
 
@@ -439,26 +458,25 @@ def _required_terms(res: Result, base: str) -> list[str]:
 
 
 def _polish(res: Result, base: str) -> None:
-    terms = _required_terms(res, base)
+    """AI 핵심 문장 고르기: LLM은 답변 문장 번호만 고른다. 화면에는 코드가 만든 그 문장을 그대로 올린다.
+    v0.2의 자유 요약은 숫자 검사를 통과하고도 이유를 잘못 이은 사례가 있어(2026-11-08 평가) 이 방식으로 바꿨다.
+    문장을 새로 쓰지 않으므로 숫자·시장·이유를 엇갈리게 이을 수 없다."""
+    if len(res.lines) < 2:
+        return
+    numbered = "\n".join(f"{i + 1}. {l}" for i, l in enumerate(res.lines))
     txt = _llm([
-        {"role": "system", "content": "너는 제주 농가를 돕는 안내원이다. 아래 근거 문장의 숫자를 바꾸지 말고, 새 숫자를 만들지 말고, "
-                                      "질문에 대한 핵심만 쉬운 말로 2문장 안에 요약하라. 어느 숫자가 어느 시장·기간의 값인지 바꾸지 마라. "
-                                      "다음 말 가운데 요약에 필요한 것은 글자 그대로 써라: " + ", ".join(terms) + ". "
-                                      "판매를 권유하지 마라."},
-        {"role": "user", "content": f"질문: {res.question}\n근거: {base}"}])
+        {"role": "system", "content": "너는 제주 농가를 돕는 안내원이다. 아래 번호 붙은 답변 문장 가운데 질문에 가장 직접 답하는 문장을 "
+                                      "1개 또는 2개 골라 번호만 쉼표로 답하라(예: 1,3). 다른 말은 쓰지 마라."},
+        {"role": "user", "content": f"질문: {res.question}\n답변 문장:\n{numbered}"}], 20)
     if not txt:
         return
-    allowed = _numbers(base) | _numbers(" ".join(" ".join(r) for r in res.evidence))
-    extra = _numbers(txt) - allowed
-    if extra:
-        res.llm_rejected = "근거에 없는 숫자 " + ", ".join(sorted(extra)[:5])
+    if re.sub(r"[\d,\s.]", "", txt):
+        res.llm_rejected = "번호가 아닌 답: " + txt.strip()[:40]
         return
-    # 요약에 시장 이름을 썼다면 그 시장이 근거에 있어야 하고, 전망을 말했다면 출처(허브)를 밝혀야 한다
-    bad = [m for m in set(MARKET_ALIASES.values()) if m in txt and m not in base]
-    if "전망" in txt and "제주데이터허브" not in txt:
-        bad.append("전망 출처(제주데이터허브) 누락")
-    if bad:
-        res.llm_rejected = "용어 검사 실패: " + ", ".join(bad[:5])
+    ids = [int(n) for n in re.findall(r"\d+", txt)]
+    if not ids or len(ids) > 2 or any(not 1 <= i <= len(res.lines) for i in ids):
+        res.llm_rejected = "범위를 벗어난 번호: " + txt.strip()[:40]
         return
-    res.summary = txt.strip()
+    res.picked = sorted(set(i - 1 for i in ids))
+    res.summary = " ".join(res.lines[i] for i in res.picked)
     res.llm_used = True

@@ -13,7 +13,7 @@ def main() -> int:
         print(json.dumps(res.to_dict(), ensure_ascii=False, indent=2, default=str))
         return 0
     if res.summary:
-        print("■ AI 한 줄 요약(숫자 검사 통과)\n" + res.summary + "\n")
+        print("■ AI가 고른 핵심 문장(답변 문장 그대로)\n" + res.summary + "\n")
     print("■ 답변\n" + res.answer)
     if res.evidence:
         print("\n■ 근거")

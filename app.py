@@ -49,7 +49,7 @@ td{{border-bottom:1px solid #ddd;padding:4px 6px;vertical-align:top}}details{{ma
 <h1>밭에서 묻는 시세 비서 <small style="font-size:14px">제주 월동채소 출하 판단 도우미</small></h1>
 <form method="get"><input name="q" value="{q}" placeholder="예: 월동무 지금 내도 될까?" autofocus><br><button>물어보기</button></form>
 <div>{examples}</div>{body}
-<p class="note">자료: 제주데이터허브 응용서비스 「농산물 분석」(원자료 aT 도매유통정보시스템)과 「품종별 가격 전망」. 판매 결정은 농가가 직접 하세요.</p></html>"""
+<p class="note">자료: 제주데이터허브 응용서비스 「농산물 분석」(원자료 aT 도매유통정보시스템)과 「품종별 가격 전망」. 가격은 전국 도매시장 경락가(운송비 차감 전)이며 제주산 출하분만 따로 집계했는지는 확인하지 못했습니다. 판매 결정은 농가가 직접 하세요.</p></html>"""
 
 
 def render(q: str) -> str:
@@ -63,7 +63,7 @@ def render(q: str) -> str:
             steps = "".join(f"<li>{html.escape(s.tool)} · {s.ms}ms {html.escape(s.note)}</li>" for s in r.steps)
             steps = f"<p>{planner}</p>" + steps
             cav = "".join(f"<li>{html.escape(c)}</li>" for c in r.caveats)
-            summary = (f'<div class="sum"><b>AI 한 줄 요약 · 숫자 검사 통과</b><br>{html.escape(r.summary)}</div>'
+            summary = (f'<div class="sum"><b>AI가 고른 핵심 문장 · 아래 답변에서 그대로 옮김</b><br>{html.escape(r.summary)}</div>'
                        if r.summary else "")
             body = (f'{summary}<div class="ans">{"".join(f"<p>{html.escape(l)}</p>" for l in (r.lines or [r.answer]))}</div>{svg_chart(r.chart)}'
                     f'<details open><summary>근거 숫자</summary><table>{rows}</table></details>'
