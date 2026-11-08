@@ -472,7 +472,8 @@ def answer(question: str) -> Result:
     # 이번에 안 본 분석을 다음 질문 버튼으로 권한다(문장은 코드가 만든다)
     nxt = {"forecast": f"{res.cultivar} 앞으로 몇 주 전망은?", "timing": f"{res.cultivar} 언제 내면 값이 좋아?",
            "market": f"{res.cultivar} 어느 시장이 값이 좋아?", "status": f"{res.cultivar} 지금 시세 어때?"}
-    res.followups = [q for k, q in nxt.items() if k not in intents][:3]
+    ran = {"status": "status", "timing": "season", "market": "market", "forecast": "forecast"}
+    res.followups = [q for k, q in nxt.items() if ran[k] not in res.facts][:3]
     base_answer = " ".join(lines)
     res.lines = lines
     res.answer = base_answer

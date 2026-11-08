@@ -207,6 +207,7 @@ class GuardrailTest(unittest.TestCase):
     def test_followups_offer_unrun_analyses(self):
         r = agent.answer("당근 요즘 시세 어때?")
         self.assertIn("당근(일반) 앞으로 몇 주 전망은?", r.followups)
+        self.assertNotIn("당근(일반) 지금 시세 어때?", r.followups)  # 이미 본 분석은 권하지 않는다
 
     def test_auto_asks_llm_when_no_intent_word_but_keeps_rule_crop(self):
         os.environ["LLM_MODEL"] = "fake"
