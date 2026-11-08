@@ -14,6 +14,12 @@ EXAMPLES = ["월동무 지금 내도 될까?", "월동무 언제 내면 값이 �
             "양배추 어느 시장이 값을 잘 쳐줘?", "당근 엄궁시장 시세 어때?"]
 
 
+def _md(v) -> str:
+    """20260912·2026-09-12 → 9/12. 날짜가 아니면(「11월 후반」) 그대로."""
+    d = str(v).replace("-", "")
+    return f"{int(d[4:6])}/{int(d[6:8])}" if len(d) == 8 and d.isdigit() else str(v)
+
+
 def svg_chart(ch: dict | None) -> str:
     if not ch or not ch.get("y"):
         return ""
@@ -27,7 +33,7 @@ def svg_chart(ch: dict | None) -> str:
     path = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts[:split])
     fpath = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts[max(split - 1, 0):]) if split < n else ""
     labels = "".join(
-        f'<text x="{x:.0f}" y="{h - 12}" font-size="11" text-anchor="middle">{html.escape(str(ch["x"][i])[-5:] if len(str(ch["x"][i])) == 8 else str(ch["x"][i]))}</text>'
+        f'<text x="{x:.0f}" y="{h - 12}" font-size="11" text-anchor="middle">{html.escape(_md(ch["x"][i]))}</text>'
         for i, (x, _) in enumerate(pts) if i % max(1, n // 6) == 0)
     return (f'<figure><figcaption>{html.escape(ch["title"])}</figcaption>'
             f'<svg viewBox="0 0 {w} {h}" width="100%" role="img">'

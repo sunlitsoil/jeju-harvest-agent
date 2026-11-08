@@ -1,0 +1,205 @@
+{
+ "asof": "2026-11-07",
+ "by_factor": {
+  "2": [
+   {
+    "cultivar": "당근(일반)",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "세척당근",
+    "result": "전부 제외",
+    "market": null,
+    "skipped": [
+     "대구북부도매",
+     "원주도매",
+     "안산도매"
+    ]
+   },
+   {
+    "cultivar": "흙당근",
+    "result": "전부 제외",
+    "market": null,
+    "skipped": [
+     "광주서부도매",
+     "순천도매",
+     "인천삼산도매"
+    ]
+   },
+   {
+    "cultivar": "마늘(수입)",
+    "result": "실음",
+    "market": "대전오정도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "세척무",
+    "result": "실음",
+    "market": "부산반여도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "양배추(수입)",
+    "result": "전부 제외",
+    "market": null,
+    "skipped": [
+     "서울가락도매",
+     "부산엄궁도매",
+     "인천남촌도매"
+    ]
+   },
+   {
+    "cultivar": "양배추(일반)",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "만생양파",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "저장양파",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   }
+  ],
+  "3": [
+   {
+    "cultivar": "당근(일반)",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "세척당근",
+    "result": "전부 제외",
+    "market": null,
+    "skipped": [
+     "대구북부도매",
+     "원주도매",
+     "안산도매"
+    ]
+   },
+   {
+    "cultivar": "흙당근",
+    "result": "전부 제외",
+    "market": null,
+    "skipped": [
+     "광주서부도매",
+     "순천도매",
+     "인천삼산도매"
+    ]
+   },
+   {
+    "cultivar": "마늘(수입)",
+    "result": "실음",
+    "market": "대전오정도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "세척무",
+    "result": "실음",
+    "market": "부산반여도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "양배추(수입)",
+    "result": "전부 제외",
+    "market": null,
+    "skipped": [
+     "서울가락도매",
+     "부산엄궁도매",
+     "인천남촌도매"
+    ]
+   },
+   {
+    "cultivar": "양배추(일반)",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "만생양파",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "저장양파",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   }
+  ],
+  "5": [
+   {
+    "cultivar": "당근(일반)",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "세척당근",
+    "result": "전부 제외",
+    "market": null,
+    "skipped": [
+     "대구북부도매",
+     "원주도매",
+     "안산도매"
+    ]
+   },
+   {
+    "cultivar": "흙당근",
+    "result": "실음",
+    "market": "광주서부도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "마늘(수입)",
+    "result": "실음",
+    "market": "대전오정도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "세척무",
+    "result": "실음",
+    "market": "부산반여도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "양배추(수입)",
+    "result": "전부 제외",
+    "market": null,
+    "skipped": [
+     "서울가락도매",
+     "부산엄궁도매",
+     "인천남촌도매"
+    ]
+   },
+   {
+    "cultivar": "양배추(일반)",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "만생양파",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   },
+   {
+    "cultivar": "저장양파",
+    "result": "실음",
+    "market": "서울가락도매",
+    "skipped": []
+   }
+  ]
+ }
+}

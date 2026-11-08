@@ -145,8 +145,10 @@ def _llm(messages: list[dict], max_tokens: int = 500) -> str | None:
     base, model = os.environ.get("LLM_BASE_URL"), os.environ.get("LLM_MODEL")
     if not base or not model:
         return None
-    body = json.dumps({"model": model, "messages": messages, "temperature": 0.2,
-                       "max_tokens": max_tokens}).encode("utf-8")
+    req_body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": max_tokens}
+    if os.environ.get("LLM_REASONING_EFFORT"):  # 생각 모드 모델(qwen3.5 등)은 none으로 꺼야 짧은 답이 비지 않는다
+        req_body["reasoning_effort"] = os.environ["LLM_REASONING_EFFORT"]
+    body = json.dumps(req_body).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     if os.environ.get("LLM_API_KEY"):
         headers["Authorization"] = "Bearer " + os.environ["LLM_API_KEY"]
@@ -170,7 +172,10 @@ def _llm_tools(messages: list[dict], tool_specs: list[dict]) -> dict | None:
     base, model = os.environ.get("LLM_BASE_URL"), os.environ.get("LLM_MODEL")
     if not base or not model:
         return None
-    body = json.dumps({"model": model, "messages": messages, "tools": tool_specs, "temperature": 0}).encode("utf-8")
+    req_body = {"model": model, "messages": messages, "tools": tool_specs, "temperature": 0}
+    if os.environ.get("LLM_REASONING_EFFORT"):
+        req_body["reasoning_effort"] = os.environ["LLM_REASONING_EFFORT"]
+    body = json.dumps(req_body).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     if os.environ.get("LLM_API_KEY"):
         headers["Authorization"] = "Bearer " + os.environ["LLM_API_KEY"]

@@ -2,24 +2,30 @@
 
 제주데이터허브 응용서비스 「농산물 분석」(일별 도매가격·거래량·도매시장별 물량과 가격)과
 「품종별 가격 전망」을 도구로 써서, 농가가 말로 물은 질문("월동무 지금 내도 될까?")에
-근거 숫자와 함께 답하는 AI Agent 시제품. 2026 제주 AI·빅데이터 활용 AI Agent 개발 챌린지 출품작(v0.2, 2026-11-08).
+근거 숫자와 함께 답하는 AI Agent 시제품. 2026 제주 AI·빅데이터 활용 AI Agent 개발 챌린지 출품작(v0.3, 2026-11-08).
 
 ## 실행
 
 필요한 것: Python 3.10 이상, 인터넷. 외부 패키지 설치 없음.
+센터 PC에서는 `run_center.bat`(Windows) 또는 `run_center.command`(맥·리눅스)를 두 번 누르면 서버가 켜지고 브라우저가 열린다.
 
 ```bash
 python3 app.py                 # 브라우저에서 http://127.0.0.1:8765
 python3 cli.py "당근 요즘 시세 어때?"
 python3 cli.py "월동무 언제 내면 값이 좋아?" --json
-python3 -m unittest discover -s tests -v   # 인터넷 없이 저장 응답으로 재현(17개)
-python3 eval/eval_planner.py               # 계획기 평가(질문 20개, 정답 품종·의도)
+python3 -m unittest discover -s tests -v   # 인터넷 없이 저장 응답으로 재현(26개)
+python3 eval/eval_planner.py               # 계획기 평가(EVAL_QS=holdout_questions.json 등으로 문항 묶음 선택)
+python3 eval/forecast_coverage.py          # 허브 전망 제공 품종별 실음·제외와 이상값 배수 2·3·5 비교
 ```
+
+재현 범위는 세 가지로 나뉜다. ①단위 테스트는 저장 응답만 써서 언제 돌려도 같은 결과다. ②실제 조회(`app.py`, `cli.py`)는
+허브가 새 자료를 올리면 숫자가 바뀐다. ③LLM 평가는 모델·서버 버전에 따라 달라질 수 있어 당시 결과를 `eval/results/`에
+모델 이름·실행 시각과 함께 남겼다.
 
 LLM을 붙이려면 `.env.example`을 보고 환경변수를 준다. 예(Ollama):
 
 ```bash
-LLM_BASE_URL=http://127.0.0.1:11434/v1 LLM_MODEL=qwen3.5:4b python3 app.py              # 기본 auto 모드
+AGENT_PLANNER=rule LLM_BASE_URL=http://127.0.0.1:11434/v1 LLM_MODEL=qwen3.5:4b LLM_REASONING_EFFORT=none python3 app.py   # 센터 권장: 규칙 계획 + 4B는 핵심 문장 고르기만
 AGENT_PLANNER=llm LLM_BASE_URL=... LLM_MODEL=<큰 모델> python3 app.py                    # LLM이 먼저 도구 선택
 ```
 
